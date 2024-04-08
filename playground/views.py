@@ -9,6 +9,10 @@ from .forms import CustomUserCreationForm, CustomUserLoginForm, ClassroomForm, T
 from .models import CustomUser, Classroom, Topic, Message, Test, Question,TestScore, TestAttempt, TestAttemptQuestion
 from django.contrib import messages
 from django.db import models
+from django.db.models import Count, Sum, Avg
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
 
 
 # Very first page of the Website before login or sign up
@@ -92,25 +96,61 @@ def classroom(request, pk):
     classroom_messages = classroom.message_set.all().order_by('created')
     tests = classroom.test_set.all().order_by('created')
     participants = classroom.participants.all()
+    test_scores = TestScore.objects.filter(student=request.user)
     # questions = test.question_set.all().order_by('id')
     test_data = []
 
     for test in tests:
         num_questions = test.question_set.count()  # Count the number of questions in each test
         test_data.append({'test': test, 'num_questions': num_questions})
+        
+    # calculate average score
+    total_tests = test_scores.count()
+    total_score = test_scores.aggregate(total=Sum('score'))['total'] or 0
+    average_score = total_score / total_tests if total_tests > 0 else 0
 
+    # calculating average time taken for a particular question
+    average_time_per_question = TestAttemptQuestion.objects.filter(
+        test_attempt__student=request.user
+    ).aggregate(average_time=Avg('time_taken'))['average_time'] or 0
+
+    print(average_time_per_question)
+
+    # data visualization
+    test_titles = [score.test.title for score in test_scores]
+    test_scores_values = [score.score for score in test_scores]
+
+    # pie chart
+    plt.figure(figsize=(8, 3))
+    # plt.legend(loc="upper center", bbox_to_anchor=(1, 0.5), title="Test Titles")
+    plt.pie(test_scores_values, labels=test_titles, autopct='%1.1f%%')
+    plt.title('Test Scores Distribution')
+    plt.axis('equal')
+
+
+    # convert plot to bytes and embed in HTML
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.getvalue()).decode()
+    plt.close()
+
+    pie_chart = f'data:image/png;base64,{image_base64}'
+    
     context = {'classroom': classroom, 
                'classroom_messages': classroom_messages,
                'participants': participants,
                'test_data':test_data,
+               'tests': tests,
+               'test_scores': test_scores,
+               'average_score': average_score,
+               'average_time_per_question': average_time_per_question,
+               'pie_chart': pie_chart,
                }
     return render(request,'classroom.html',context)
 
-@login_required(login_url='login')
-def test(request,pk):
-    classroom = Classroom.object.get(id=pk)
 
-# Creating a test
+# creating a test
 @login_required(login_url='login')
 def create_test(request, classroom_id):
     classrooms = Classroom.objects.all()
@@ -132,7 +172,6 @@ def create_test(request, classroom_id):
                     pass
             context = {'classrooms': classrooms}
             return render(request, 'dashboard_mentor.html',context)
-            # return redirect('classroom')  # Adjust the URL name as needed
     else:
         test_form = TestForm()
         question_forms = [QuestionForm(prefix=f'question_{i}') for i in range(1, 11)]
@@ -160,62 +199,19 @@ def classroom_detail(request, classroom_id):
                'test_data':test_data}
     return render(request, 'classroom.html', context)
 
-from .forms import AnswerForm
-
-# @login_required(login_url='login')
-# def take_test(request, pk, test_id, question_index=1):
-#     # retrieve classroom, test, and questions
-#     classroom = Classroom.objects.get(id=pk)
-#     test = Test.objects.get(pk=test_id)
-#     questions = test.question_set.all().order_by('id')
-#     if request.method == 'POST':
-
-#         # Create AnswerForm instance and populate with POST data
-#         answer_form = AnswerForm(request.POST)
-#         print(request.POST)
-
-#         # Validate AnswerForm
-#         if answer_form.is_valid():
-#             # Process the submitted answer
-#             option_selected = answer_form.cleaned_data['option_selected']
-#             current_question_index = int(request.POST.get('current_question_index'))
-#             time_taken_str = request.POST.get('time_taken')
-#             time_taken = int(time_taken_str) if time_taken_str else 0
-
-#             # Save the answer to the database or perform other actions as needed
-
-#             # Determine the next question index
-#             next_question_index = current_question_index + 1
-
-#             # Redirect to the next question's URL if it exists
-#             if next_question_index <= questions.count():
-#                 return redirect('take_test', pk=pk, test_id=test_id, question_index=next_question_index)
-#             else:
-#                 # If it's the last question, redirect to the classroom or another desired URL
-#                 return redirect('classroom', pk=pk)
-#         else:
-#             print("Answer form is invalid:", answer_form.errors)
-
-#     else:
-#         # Render the test-taking form for the current question
-#         if question_index <= questions.count():
-#             question = questions[question_index - 1]
-#             time_limit = test.time_limit_per_question
-
-#             return render(request, 'take_test.html', {
-#                 'classroom': classroom,
-#                 'test': test,
-#                 'question': question,
-#                 'time_limit': time_limit,
-#                 'question_index': question_index,
-#                 'answer_form': AnswerForm(),  # pass an instance of AnswerForm to the template
-#             })
-
-#     # If the request method is not POST or there are no more questions, render the classroom view
-#     return render(request, 'classroom.html', {'classroom': classroom, 'tests': classroom.test_set.all().order_by('created')})
+@login_required(login_url='login')
+def show_test(request, pk, test_id):
+    classroom = Classroom.objects.get(id=pk)
+    test = Test.objects.get(pk=test_id)
+    
+    if request.method == 'GET':
+        test_data = [{'test': test, 'num_questions': test.question_set.count()}]
+        return render(request, 'test_component.html', {'classroom': classroom, 'test_data': test_data})
+    else:
+        return redirect('classroom', pk=pk)
 
 @login_required(login_url='login')
-def take_test(request, pk, test_id, question_index=1):
+def take_test(request, pk, test_id, question_index):
     classroom = Classroom.objects.get(id=pk)
     test = Test.objects.get(pk=test_id)
     questions = test.question_set.all().order_by('id')
@@ -226,7 +222,7 @@ def take_test(request, pk, test_id, question_index=1):
         time_taken_str = request.POST.get('time_taken')
         time_taken = int(time_taken_str) if time_taken_str else 0
 
-        if option_selected:
+        if True:
             test_attempt = TestAttempt.objects.create(
                 student=request.user,
                 test=test,
@@ -254,7 +250,7 @@ def take_test(request, pk, test_id, question_index=1):
     else:
         if question_index <= questions.count():
             question = questions[question_index - 1]
-            time_limit = test.time_limit_per_question
+            time_limit = 5
             request.session['test_start_time'] = timezone.now().isoformat()
             return render(request, 'take_test.html', {
                 'classroom': classroom,
@@ -289,44 +285,41 @@ def calculate_and_redirect_score(request, test, student, classroom):
         messages.success(request, f'You have completed the test with a score of {score}!')
         return score
 
-# def calculate_and_redirect_score(request, test, student, classroom):
-#     test_attempts = TestAttempt.objects.filter(test=test, student=student)
-#     total_questions = test_attempts.count()
-#     correct_answers = 0
-#     for attempt in test_attempts:
-#         questions_attempted = TestAttemptQuestion.objects.filter(test_attempt=attempt)
-#         for question_attempt in questions_attempted:
-#             if question_attempt.chosen_option == question_attempt.question.correct_option:
-#                 correct_answers += 1
+@login_required(login_url='login')
+def student_report(request, classroom_id, student_id):
 
-#     score = (correct_answers / total_questions) * 100
-#     TestScore.objects.create(
-#         student=student,
-#         test=test,
-#         score=score
-#     )
-#     messages.success(request, f'You have completed the test with a score of {score}!')
+    print("hello1")
+    student = User.objects.get(id=student_id)
+    classroom = Classroom.objects.get(id=classroom_id)
+    print("hello")
+    test_scores = TestScore.objects.filter(student=student, test__classroom=classroom)
 
-# def calculate_score(test, student):
-#     # Get all test attempts by the student for the given test
-#     test_attempts = TestAttempt.objects.filter(test=test, student=student)
+    # Extract test names and scores for plotting
+    test_names = [score.test.title for score in test_scores]
+    scores = [score.score for score in test_scores]
 
-#     # Calculate the score based on correct and incorrect answers
-#     total_questions = test_attempts.count()
-#     # correct_answers = test_attempts.filter(selected_option=models.F('question__correct_option')).count()
-#     correct_answers = test_attempts.filter(chosen_option=models.F('question__correct_option')).count()
+    # Generate pie chart
+    plt.figure(figsize=(8, 8))
+    plt.pie(scores, labels=test_names, autopct='%1.1f%%')
+    plt.title('Test Scores')
+    plt.savefig('test_scores_pie_chart.png')
 
-#     score = (correct_answers / total_questions) * 100
+    # Generate bar chart
+    plt.figure(figsize=(10, 6))
+    plt.bar(test_names, scores, color='skyblue')
+    plt.xlabel('Tests')
+    plt.ylabel('Scores')
+    plt.title('Test Scores')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig('test_scores_bar_chart.png')
 
-#     # Save the score to the database
-#     TestScore.objects.create(
-#         student=student,
-#         test=test,
-#         score=score
-#     )
-
-#     return score
-
+    context = {
+        'student': student,
+        'classroom': classroom,
+        'test_scores': test_scores,
+    }
+    return render(request, 'student_report.html', context)
 
 # To create a new classroom
 @login_required(login_url='login')

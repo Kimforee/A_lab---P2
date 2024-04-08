@@ -7,7 +7,7 @@
             <h2>{{ test_info.test.title }}</h2>
             <p>{{test_info.test.description}}</p>
             <p>Number of Questions: {{ test_info.num_questions }}</p>
-            <form method="get" action="{% url 'take_test' classroom.id test_info.test.id %}">
+            <form method="get" action="{% url 'take_test' classroom.id test_info.test.id 1 %}">
                 <button type="submit">Start Test</button>
             </form>
         </div>
