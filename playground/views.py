@@ -1,5 +1,3 @@
-from django.utils import timezone
-from datetime import datetime
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
@@ -13,7 +11,6 @@ from django.db.models import Count, Sum, Avg
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
-
 
 # Very first page of the Website before login or sign up
 def landing_page(request):
@@ -74,6 +71,42 @@ def registrationPage(request):
         form = CustomUserCreationForm()
     return render(request, 'registration.html', {'form': form})
  
+#Contactus
+def contact_page(request):
+    return render(request,'contact.html')
+
+#Faqs
+def faqs_page(request):
+    return render(request,'faqs.html')
+
+#learnmore
+def learnmore_page(request):
+    return render(request,'learnmore.html')
+
+#notification
+def notification_page(request):
+    return render(request,'notification.html')
+
+#profile
+def profile_page(request):
+    return render(request,'profile.html')
+
+#settings
+def settings_page(request):
+    return render(request,'settings.html')
+
+#history
+def history_page(request):
+    return render(request,'history.html')
+
+#calander
+def calander_page(request):
+    return render(request,'calander.html')
+
+#genquestion
+def genq_page(request):
+    return render(request,'gen.html')
+
 # Dashboard   
 @login_required(login_url='login')
 def dashboard(request):
@@ -147,7 +180,7 @@ def classroom(request, pk):
                'average_time_per_question': average_time_per_question,
                'pie_chart': pie_chart,
                }
-    return render(request,'classroom.html',context)
+    return render(request,'classroomcopy.html',context)
 
 
 # creating a test
@@ -197,7 +230,7 @@ def classroom_detail(request, classroom_id):
                'classroom_messages': classroom_messages,
                'participants': participants,
                'test_data':test_data}
-    return render(request, 'classroom.html', context)
+    return render(request, 'classroomcopy.html', context)
 
 @login_required(login_url='login')
 def show_test(request, pk, test_id):
@@ -261,6 +294,7 @@ def take_test(request, pk, test_id, question_index):
             })
 
     return render(request, 'classroom.html', {'classroom': classroom, 'tests': classroom.test_set.all().order_by('created')})
+
 
 def calculate_and_redirect_score(request, test, student, classroom):
     try:
