@@ -1,5 +1,6 @@
 {% load static %}
 {% block content %}
+<link rel="stylesheet" href="{% static '/css/test_component.css' %}">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 <style>
     .tdes {
@@ -12,30 +13,30 @@
         padding: 10px;
     }
 </style>
+<div class="low">
+    {% for test_info in test_data %}
+    <div class="card">
 
-{% for test_info in test_data %}
-<div class="card">
-
-    <div class="ch">
-
-        <div class="date" title="Exam Date">26 July</div>
-        <div class="data" title="Subject/Topic">{{ test_info.test.title }}</div>
-        <div class="data">#{{ test_info.num_questions }} Questions &nbsp; &nbsp; MCQ</div>
-    </div>
-    <div class="tdes">{{ test_info.test.description }}</div>
-    <div class="cl">
-
-        <div class="time" title="Duration">
-            <img src="{% static '\assests\mentordashboard\timer.svg' %}" alt="Logo 1"> 15 Minutes
+        <div class="ch">
+            <div class="date" title="Exam Date">26 July</div>
+            <div class="data" title="Subject/Topic">{{ test_info.test.title }}</div>
+            <div class="data">#{{ test_info.num_questions }} Questions &nbsp; &nbsp; MCQ</div>
         </div>
-        <form class="examForm" method="get" action="{% url 'take_test' classroom.id test_info.test.id %}">
-            <button class="attemptBtn atmpt" type="button" data-classroom-id="{{ classroom.id }}" data-test-id="{{ test_info.test.id }}">Attempt Now</button>
-        </form>
+        <div class="tdes">{{ test_info.test.description }}</div>
+        <div class="cl">
+
+            <div class="time" title="Duration">
+                <img src="{% static '\assests\mentordashboard\timer.svg' %}" alt="Logo 1"> 15 Minutes
+
+            </div>
+            <form class="examForm" method="get" action="{% url 'take_test' classroom.id test_info.test.id 1 %}">
+                <button class="attemptBtn atmpt" type="submit">Start Test</button>
+            </form>
+        </div>
+
     </div>
-
+    {% endfor %}
 </div>
-{% endfor %}
-
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // Attach click event listener to all Attempt Now buttons
@@ -55,7 +56,7 @@
             title: '<strong>BEFORE EXAM LOGIN RULES</strong>',
             icon: 'warning',
             html:
-            '<h5 style="font-family: Arial;">ONLINE EXAM RULES TO BE FOLLOWED STRICTLY</h5> &nbsp;' +
+                '<h5 style="font-family: Arial;">ONLINE EXAM RULES TO BE FOLLOWED STRICTLY</h5> &nbsp;' +
                 '<ol style="font-family: Arial; padding-left: 20px; text-align:left;">' +
                 '<li style="margin-bottom: 10px;">Don\'t minimize the window, it will be monitored.</li>' +
                 '<li style="margin-bottom: 10px;">Check that your camera is proper.</li>' +

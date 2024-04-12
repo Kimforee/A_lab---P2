@@ -73,7 +73,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'A_lab.urls'
@@ -158,9 +157,5 @@ AUTHENTICATION_BACKENDS = [
 AUTH_USER_MODEL = 'playground.CustomUser'
 
 # LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/dashboard/#"
+LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL =  "/logout/"
-
-X_FRAME_OPTIONS = 'SAMEORIGIN'
-
-XS_SHARING_ALLOWED_METHODS = ['POST','GET','OPTIONS', 'PUT', 'DELETE']

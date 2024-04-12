@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from django.contrib.auth import logout, login
+from django.contrib.auth import logout, login 
 from django.contrib.auth.views import LoginView, LogoutView, PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, PasswordResetCompleteView
 from playground.views import login_page
 
@@ -26,6 +26,8 @@ urlpatterns = [
     path('classrooomcopy/<str:pk>/',views.classroom,name='classroomcopy'),
     path('classroom/<str:classroom_id>/', views.classroom_detail, name='classroom_detail'),
     path('classroom/<str:classroom_id>/create-test/', views.create_test, name='create-test'),
+    path('classroom/<int:pk>/show-test/<int:test_id>/', views.show_test, name='show_test'),
     path('classroom/<int:pk>/take-test/<int:test_id>/', views.take_test, name='take_test'),
     path('classroom/<int:pk>/take-test/<int:test_id>/<int:question_index>/', views.take_test, name='take_test'),
+    path('classroom/<int:classroom_id>/student-report/<int:student_id>/', views.student_report, name='student_report')
 ]
