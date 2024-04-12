@@ -22,7 +22,7 @@
         </div>
         <hr style="margin-left: 10px; margin-bottom: 20px;">
         <p class="ques">{{ question.question_text }}</p>
-        <img class="imageques" src="">
+        <!-- <img class="imageques" src=""> -->
         <script>
           var timeRemaining = {{ time_limit }};  // This will be in seconds
           var timer = setInterval(function () {
@@ -36,7 +36,7 @@
           }, 1000);
         </script>
 
-        <form action="{% url 'take_test' pk=classroom.id test_id=test.id %}" method="post">
+        <form action="{% url 'take_test' pk=classroom.id test_id=test.id  %}" method="post">
           {% csrf_token %}
         
           <div class="opt">
