@@ -11,6 +11,36 @@ from django.db.models import Count, Sum, Avg
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
+from datetime import datetime
+from time import timezone
+from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from .forms import CustomUserCreationForm, CustomUserLoginForm, ClassroomForm, TestForm, QuestionForm, GenqForm
+from .models import CustomUser, Classroom, Topic, Message, Test, Question
+from langchain.prompts import PromptTemplate
+from langchain.llms import CTransformers
+from django.utils import timezone
+from datetime import datetime
+from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from .forms import CustomUserCreationForm, CustomUserLoginForm, ClassroomForm, TestForm, QuestionForm, AnswerForm
+from .models import CustomUser, Classroom, Topic, Message, Test, Question,TestScore, TestAttempt, TestAttemptQuestion
+from django.contrib import messages
+from django.db import models
+from django.db.models import Count, Sum, Avg
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
+from django.template.loader import get_template
+from django.template import Context
+from xhtml2pdf import pisa
+from .models import TestAttemptQuestion
 
 # Very first page of the Website before login or sign up
 def landing_page(request):
@@ -103,9 +133,71 @@ def history_page(request):
 def calander_page(request):
     return render(request,'calander.html')
 
+
+
+def qresult_page(request):
+    return render(request,'result.html')
+
 #genquestion
 def genq_page(request):
-    return render(request,'gen.html')
+    if request.method == "POST":
+        form = GenqForm(request.POST)
+        if form.is_valid():
+            input_text = form.cleaned_data.get('input_text')
+            no_que = int(form.cleaned_data.get('no_que'))
+            subject = form.cleaned_data.get('subject')
+            que_type = form.cleaned_data.get('que_type')
+
+            responses = get_lama_response(input_text, subject, no_que, que_type)
+
+            return render(request, 'result.html', {'responses': responses})
+    else:
+        form = GenqForm()
+    return render(request, 'gen.html', {'form': form})
+
+def generate(request):
+    input_text = request.form['input_text']
+    no_que = int(request.form['no_que'])
+    subject = request.form['subject']
+    que_type = request.form['que_type']
+
+    # Call the function to generate responses
+    responses = get_lama_response(input_text, subject, no_que, que_type)
+
+    # Save the generated questions to an Excel file
+    # save_to_excel(responses)
+
+    return render('result.html', responses=responses)
+
+
+def get_lama_response(input_text, subject, no_que, que_type, max_token_length=512):
+    llm = CTransformers(model='/Users/mohit/Documents/GitHub/ALAB/playground/model/llama-2-7b-chat.ggmlv3.q8_0.bin',
+                        model_type='llama',
+                        config={'max_new_tokens': 256, 'temperature': 0.1})
+
+    template = """
+        Generate {no_que} {que_type} questions and four options including correct answer on 
+        subject/topic {subject} for the given topics: {input_text} in format
+        question: Question?
+        option a: ...
+        option b: ...c
+        option c: ...
+        option d: ...
+        correct Answer: ... 
+        """
+
+    prompt = PromptTemplate(input_variables=["no_que", "que_type", "subject", "input_text"],
+                            template=template)
+
+    # Split input text into chunks
+    chunks = [input_text[i:i+max_token_length] for i in range(0, len(input_text), max_token_length)]
+
+    responses = []
+    for chunk in chunks:
+        response = llm(prompt.format(no_que=no_que, que_type=que_type, subject=subject, input_text=chunk))
+        responses.append(response)
+
+    return responses
 
 # Dashboard   
 @login_required(login_url='login')
@@ -154,21 +246,21 @@ def classroom(request, pk):
     test_scores_values = [score.score for score in test_scores]
 
     # pie chart
-    plt.figure(figsize=(8, 3))
-    # plt.legend(loc="upper center", bbox_to_anchor=(1, 0.5), title="Test Titles")
-    plt.pie(test_scores_values, labels=test_titles, autopct='%1.1f%%')
-    plt.title('Test Scores Distribution')
-    plt.axis('equal')
+    # plt.figure(figsize=(8, 3))
+    # # plt.legend(loc="upper center", bbox_to_anchor=(1, 0.5), title="Test Titles")
+    # plt.pie(test_scores_values, labels=test_titles, autopct='%1.1f%%')
+    # plt.title('Test Scores Distribution')
+    # plt.axis('equal')
 
 
-    # convert plot to bytes and embed in HTML
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    image_base64 = base64.b64encode(buffer.getvalue()).decode()
-    plt.close()
+    # # convert plot to bytes and embed in HTML
+    # buffer = BytesIO()
+    # plt.savefig(buffer, format='png')
+    # buffer.seek(0)
+    # image_base64 = base64.b64encode(buffer.getvalue()).decode()
+    # plt.close()
 
-    pie_chart = f'data:image/png;base64,{image_base64}'
+    # pie_chart = f'data:image/png;base64,{image_base64}'
     
     context = {'classroom': classroom, 
                'classroom_messages': classroom_messages,
@@ -178,9 +270,9 @@ def classroom(request, pk):
                'test_scores': test_scores,
                'average_score': average_score,
                'average_time_per_question': average_time_per_question,
-               'pie_chart': pie_chart,
+            #    'pie_chart': pie_chart,
                }
-    return render(request,'classroomcopy.html',context)
+    return render(request,'classroom.html',context)
 
 
 # creating a test
@@ -243,6 +335,7 @@ def show_test(request, pk, test_id):
     else:
         return redirect('classroom', pk=pk)
 
+
 @login_required(login_url='login')
 def take_test(request, pk, test_id, question_index):
     classroom = Classroom.objects.get(id=pk)
@@ -295,7 +388,6 @@ def take_test(request, pk, test_id, question_index):
 
     return render(request, 'classroom.html', {'classroom': classroom, 'tests': classroom.test_set.all().order_by('created')})
 
-
 def calculate_and_redirect_score(request, test, student, classroom):
     try:
         test_score = TestScore.objects.get(student=request.user, test=test)
@@ -333,20 +425,20 @@ def student_report(request, classroom_id, student_id):
     scores = [score.score for score in test_scores]
 
     # Generate pie chart
-    plt.figure(figsize=(8, 8))
-    plt.pie(scores, labels=test_names, autopct='%1.1f%%')
-    plt.title('Test Scores')
-    plt.savefig('test_scores_pie_chart.png')
+    # plt.figure(figsize=(8, 8))
+    # plt.pie(scores, labels=test_names, autopct='%1.1f%%')
+    # plt.title('Test Scores')
+    # plt.savefig('test_scores_pie_chart.png')
 
-    # Generate bar chart
-    plt.figure(figsize=(10, 6))
-    plt.bar(test_names, scores, color='skyblue')
-    plt.xlabel('Tests')
-    plt.ylabel('Scores')
-    plt.title('Test Scores')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig('test_scores_bar_chart.png')
+    # # Generate bar chart
+    # plt.figure(figsize=(10, 6))
+    # plt.bar(test_names, scores, color='skyblue')
+    # plt.xlabel('Tests')
+    # plt.ylabel('Scores')
+    # plt.title('Test Scores')
+    # plt.xticks(rotation=45)
+    # plt.tight_layout()
+    # plt.savefig('test_scores_bar_chart.png')
 
     context = {
         'student': student,
@@ -354,6 +446,115 @@ def student_report(request, classroom_id, student_id):
         'test_scores': test_scores,
     }
     return render(request, 'student_report.html', context)
+
+
+from django.db.models import Prefetch
+from collections import defaultdict
+
+def test_report(request, test_id):
+    # Retrieve test details and questions
+    print("View called")
+    test = Test.objects.get(pk=test_id)
+    questions = test.question_set.all().order_by('id')
+
+    # Retrieve test attempt questions for the current user
+    test_attempt_questions = TestAttemptQuestion.objects.filter(
+        test_attempt__test=test,
+        test_attempt__student=request.user
+    ).prefetch_related(
+        Prefetch('test_attempt', queryset=TestAttempt.objects.select_related('test'))
+    )
+
+    # Prepare data for template
+    question_data = []
+    for question in questions:
+        attempts = test_attempt_questions.filter(question=question)
+        if attempts:
+            first_attempt = attempts.first()
+            # Check if the chosen option matches the correct option
+            is_correct = first_attempt.chosen_option == question.correct_option
+            question_data.append({
+                'question': question,
+                'time_taken': first_attempt.time_taken,
+                'chosen_option': first_attempt.chosen_option,
+                'is_correct': is_correct, # Add this field to indicate correctness
+            })
+        else:
+            question_data.append({
+                'question': question,
+                'time_taken': 'N/A',
+                'chosen_option': 'N/A',
+                'is_correct': False, # Assume incorrect if no attempt
+            })
+
+    # Generate context for template
+    context = {
+        'test': test,
+        'question_data': question_data,
+    }
+
+    return render(request, 'test_report.html', context)
+
+
+def render_to_pdf(template_src, context_dict={}):
+    template = get_template(template_src)
+    html = template.render(context_dict)
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+    if not pdf.err:
+        return HttpResponse(result.getvalue(), content_type='application/pdf')
+    return None
+
+def download_test_report_pdf(request, test_id):
+    # Retrieve test details and questions
+    test = Test.objects.get(pk=test_id)
+    questions = test.question_set.all().order_by('id')
+
+    # Retrieve test attempt questions for the current user
+    test_attempt_questions = TestAttemptQuestion.objects.filter(
+        test_attempt__test=test,
+        test_attempt__student=request.user
+    ).prefetch_related(
+        Prefetch('test_attempt', queryset=TestAttempt.objects.select_related('test'))
+    )
+
+    # Prepare data for template
+    question_data = []
+    for question in questions:
+        attempts = test_attempt_questions.filter(question=question)
+        if attempts:
+            first_attempt = attempts.first()
+            # Check if the chosen option matches the correct option
+            is_correct = first_attempt.chosen_option == question.correct_option
+            question_data.append({
+                'question': question,
+                'time_taken': first_attempt.time_taken,
+                'chosen_option': first_attempt.chosen_option,
+                'is_correct': is_correct, # Add this field to indicate correctness
+            })
+        else:
+            question_data.append({
+                'question': question,
+                'time_taken': 'N/A',
+                'chosen_option': 'N/A',
+                'is_correct': False, # Assume incorrect if no attempt
+            })
+
+    # Generate context for template
+    context = {
+        'test': test,
+        'question_data': question_data,
+    }
+
+    # Render the PDF using the dedicated PDF template
+    pdf = render_to_pdf('test_report_pdf.html', context)
+    if pdf:
+        response = HttpResponse(pdf, content_type='application/pdf')
+        filename = f'test_report_{test_id}.pdf'
+        content = f'attachment; filename="{filename}"'
+        response['Content-Disposition'] = content
+        return response
+    return HttpResponse("Not found")
 
 # To create a new classroom
 @login_required(login_url='login')
@@ -377,3 +578,4 @@ def createClassroom(request):
 def logout_page(request):
     logout(request)
     return render(request, 'logout.html')
+

@@ -1,47 +1,100 @@
-{% load static %}
 {% block content %}
-<link rel="stylesheet" type="text/css" href="{% static '/css/test_style.css' %}">
-<h2>{{ test.title }}</h2>
-<p>Question: {{ question_index }}</p>
-<h2>{{ question.question_text }}</h2>
+{% load static %}
 
-<script>
-  // Timer for each question
-  var startTime = new Date().getTime();
-  var timer = setInterval(function () {
-      var currentTime = new Date().getTime();
-      var timeElapsed = Math.floor((currentTime - startTime) / 1000);
-      var timeRemaining = '{{ time_limit }}' - timeElapsed;
-      document.getElementById('time_remaining').innerText = timeRemaining;
-      document.getElementById('time_taken').value = timeElapsed; // Update the time_taken value
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ test.title }}</title>
+  <link rel="stylesheet" type="text/css" href="{% static '/css/take_test.css' %}" />
+</head>
 
-      if (timeRemaining <= 0) {
-          clearInterval(timer);
-          // Increment the question index and update the form action
-          var nextQuestionIndex = parseInt('{{ question_index }}') + 1;
-          nextQuestionIndex = nextQuestionIndex ++;
-          var formAction = "{% url 'take_test' pk=classroom.id test_id=test.id question_index=question_index %}";
-          document.forms[0].action = formAction;
-          // Submit the form to move to the next Question
-          document.forms[0].submit();
-      }
-  }, 1000);
-</script>
-
-
-
-<form action="" method="post">
- {% csrf_token %}
- <p>Time Remaining: <span id="time_remaining">{{ time_limit }}</span> seconds</p>
+<body>
+  <script>
+    // Timer for each question
+    var startTime = new Date().getTime();
+    var timer = setInterval(function () {
+        var currentTime = new Date().getTime();
+        var timeElapsed = Math.floor((currentTime - startTime) / 1000);
+        var timeRemaining = '{{ time_limit }}' - timeElapsed;
+        document.getElementById('time_remaining').innerText = timeRemaining;
+        document.getElementById('time_taken').value = timeElapsed; // Update the time_taken value
   
- <input type="radio" name="option_selected" value="A"> {{ question.option_a }}<br>
- <input type="radio" name="option_selected" value="B"> {{ question.option_b }}<br>
- <input type="radio" name="option_selected" value="C"> {{ question.option_c }}<br>
- <input type="radio" name="option_selected" value="D"> {{ question.option_d }}<br>
-  
- <input type="hidden" name="current_question_index" value="{{ question_index }}">
- <input type="hidden" id="time_taken" name="time_taken" >
- <input type="submit" value="Submit Answer">
-</form>
+        if (timeRemaining <= 0) {
+            clearInterval(timer);
+            // Increment the question index and update the form action
+            var nextQuestionIndex = parseInt('{{ question_index }}') + 1;
+            nextQuestionIndex = nextQuestionIndex ++;
+            var formAction = "{% url 'take_test' pk=classroom.id test_id=test.id question_index=question_index %}";
+            document.forms[0].action = formAction;
+            // Submit the form to move to the next Question
+            document.forms[0].submit();
+        }
+    }, 1000);
+  </script>
+
+  <h2 class ="test_title">{{ test.title }}</h2>
+  <div class="container">
+
+      <div class="bodydiv">
+
+        <div class="head">
+          <p class="qid">Question : {{ question_index }}</p> 
+          <p class= "timer"><b>Time Remaining:</b> <span id="time_remaining">{{ time_limit }}</span> seconds</p>
+        </div>
+        <hr style="margin-left: 10px; margin-bottom: 20px;">
+        <p class="ques">{{ question.question_text }}</p>
+        <img class="imageques" src="">
+
+        <form action="" method="post">
+          {% csrf_token %}
+        
+          <div class="opt">
+            <input type="radio" name="option_selected" value="A"> &nbsp; (A) &nbsp;  {{ question.option_a }}<br><br>
+            <input type="radio" name="option_selected" value="B"> &nbsp; (B) &nbsp;  {{ question.option_b }}<br><br>
+            <input type="radio" name="option_selected" value="C"> &nbsp; (C) &nbsp;  {{ question.option_c }}<br><br>
+            <input type="radio" name="option_selected" value="D"> &nbsp; (D) &nbsp;  {{ question.option_d }}<br><br>
+          </div>
+          <div class ="opts">
+          
+            <input type="hidden" name="current_question_index" value="{{ question_index }}">
+            <input type="hidden" id="time_taken" name="time_taken" >
+            <input type="submit" value="Submit Answer"></div>
+        </form>
+      </div>
+  </div> 
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script type="text/javascript">
+            window.addEventListener('selectstart', function(e){ e.preventDefault(); });
+            $(document).ready(function () {
+                //Disable cut copy paste
+                $('body').bind('select cut copy paste', function (e) {
+                    e.preventDefault();
+                });
+                
+                //Disable mouse right click
+                $("body").on("contextmenu",function(e){
+                    return false;
+                });
+            });
+            /** TO DISABLE SCREEN CAPTURE **/
+    document.addEventListener('keyup', (e) => {
+        if (e.key == 'PrintScreen') {
+            navigator.clipboard.writeText('');
+            alert('Screenshots disabled!');
+        }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key == 'p') {
+            alert('Printing disabled!');
+            e.cancelBubble = true;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        }
+    });
+        </script>
+</body>
 
 {% endblock %}

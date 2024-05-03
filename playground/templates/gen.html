@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Krona One:wght@400&display=swap"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ABeeZee:wght@400&display=swap"/>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
-    <title>Profile | A-Lab</title>
-    <link rel="icon" type="image/x-icon" href="logo.ico">
+    <title>AI - Question Generate | A-Lab</title>
+    <link rel="icon" type="image/x-icon" href="{% static '/logo.ico' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -456,7 +456,7 @@
 </head>
 <body>
     <script type="text/javascript">
-//          window.addEventListener('selectstart', function(e){ e.preventDefault(); });
+//         {% comment %} window.addEventListener('selectstart', function(e){ e.preventDefault(); });
 //         $(document).ready(function () {
 //             //Disable cut copy paste
 //             $('body').bind('select cut copy paste', function (e) {
@@ -484,7 +484,7 @@
 //             e.preventDefault();
 //             e.stopImmediatePropagation();
 //         }
-//     }); 
+//     }); {% endcomment %}
         
         function fun_Logout() {
             swal.fire({
@@ -611,28 +611,27 @@
                         </div>
                         
                     </div>
-                    
-                    <div class = "midcontent">
-                        
-                            <h1 style="font-size: 26px; text-align: center;">Generate Questions</h1><br>
-                            <label style="font-size: 16px;" for="input_text">Input Text:</label>
-                            <textarea class="createexm" style="height: 100px;"  type="text" id="input_text" name="input_text" placeholder="Enter text to generate questions and Answers..."></textarea><br>
-                            <label style="font-size: 16px;" for="subject">Enter the Topic/Subject:</label>
-                            <input class="createexm" style="height: 100px;" type="text" id="subject" name="subject"><br>
-                            <label style="font-size: 16px;" for="que_type">Select Question Type:</label>
-                            <select id="que_type" name="que_type">
-                                <option value="Objective">Objective</option>
-                                <option value="Subjective">Subjective</option>
-                                <option value="Numerical">Numerical</option>
-                            </select><br>
-                            <label style="font-size: 16px;" for=" ">Number Of Questions:</label>
-                            <input class="createexm" type="text" id="no_que" name="no_que">
-                            <br>
-                        <form action="" method="post">
-                            <button class="vbtn" type ="submit" value="Generate">Generate</button>
-                        </form>
-                    
-                    </div>
+                        <div class = "midcontent">
+                            <form  method="post" >
+                                {% csrf_token %}
+                                <h1 style="font-size: 26px; text-align: center;">Generate Questions</h1><br>
+                                <label style="font-size: 16px;" for="input_text">Input Text:</label><br>
+                                <textarea class="createexm" style="height: 100px;"  type="text" id="input_text" name="input_text" placeholder="Enter text to generate questions and Answers..."></textarea><br>
+                                <label style="font-size: 16px;" for="subject">Enter the Topic/Subject:</label><br>
+                                <input class="createexm" style="height: 100px;" type="text" id="subject" name="subject"><br>
+                                <label style="font-size: 16px;" for="que_type">Select Question Type:</label><br>
+                                <select id="que_type" name="que_type">
+                                    <option value="Objective">Objective</option>
+                                    <option value="Subjective">Subjective</option>
+                                    <option value="Numerical">Numerical</option>
+                                </select><br>
+                                <label style="font-size: 16px;" for=" ">Number Of Questions:</label><br>
+                                <input class="createexm" type="text" id="no_que" name="no_que">
+                                <br><br>
+                            
+                                <button class="vbtn" type ="submit">Generate</button>
+                            <form>
+                        </div>
                  </div>
             </div>
 

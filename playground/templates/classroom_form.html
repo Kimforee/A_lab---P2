@@ -1,4 +1,7 @@
+{% load static %}
 {% block content %}
+<title>Create Classroom| A-Lab</title>
+<link rel="icon" type="image/x-icon" href="{% static '/logo.ico' %}">
 <style>
   .oc {
     display: flex;
@@ -85,7 +88,7 @@
       </div>
       <div class="form__group">
         <label for="room_name" class="form__label">Classroom Name</label><br>
-        <input required type="text" value="{{ form.name.value|default_if_none:'' }}" name="name" list="name-list" class="form__input" placeholder="Enter name...">
+        <input required type="text" value="{{ form.name.value|default_if_none:'' }}" name="name" maxlength="25" list="name-list" class="form__input" placeholder="Enter name...">
       </div>
       <div class="form__group">
         <label for="room_description" class="form__label">Classroom Description</label>
