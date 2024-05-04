@@ -1,36 +1,61 @@
-<!-- student_report.html -->
-{% extends 'classroom.html' %}
+
 {% load static %}
-{% block title %} Student Report {% endblock %}
-
+<!-- {% block title %} Student Report {% endblock %} -->
 {% block content %}
-  <h1>Student Report</h1>
-  <h2>{{ request.user.username }}'s Test Scores in {{ classroom.name }}</h2>
+<link rel="stylesheet" href="{% static '/css/student_report.css' %}">
 
-  <!-- Pie Chart
-  <h3>Pie Chart</h3>
-  <img src="{% static 'test_scores_pie_chart.png' %}" alt="Pie Chart">
+<div class="template">
+  Student Report
+  <!-- {{classroom.name}} -->
+  <h4 style="color: black; font-family: Arial, Helvetica, sans-serif;"><b> :{{ request.user.username }}'s Test Scores in {{ classroom.name }}</b></h4>
+</div>
 
-  Bar Chart
-  <h3>Bar Chart</h3>
-  <img src="{% static 'test_scores_bar_chart.png' %}" alt="Bar Chart"> -->
 
+<div class = "anc">
+  <div class="inp">
+     {{classroom.name}} <h4 style="color: black; font-family: Arial, Helvetica, sans-serif;"><b>Mentor: {{classroom.host.username}}</b></h4>
+      <div style=" display:flex; align-items: end; margin-top: 10px;">
+          <button class="hbt" >Cancel</button>
+          <button class="hbt" >Post</button>
+      </div>
+  </div>
+</div>
+
+<div class = "anc">
+  <div class="inp">
   <!-- Display Test Scores -->
   <h3>Test Scores:</h3>
   <ul>
     {% for score in test_scores %}
-      <li>{{ score.test.title }}: {{ score.score }}</li>
+      <li>
+        {{ score.test.title }}: {{ score.score }}
+        <!-- Add link to view test report -->
+        <button class="hbt"><a href="{% url 'test_report' test_id=score.test.id %}">View Report</a></button>
+      </li>
     {% endfor %}
   </ul>
-  
+</div>
+</div>
+
+
   <!-- Display average score -->
   <br>
+  <div class = "anc">
+    <div class="inp">
   <p>Average Score: {{ average_score }}</p>
 
   <!-- Display average time taken per question -->
   <p>Average Time Taken per Question: {{ average_time_per_question }} seconds</p>
 
+</div>
+</div>
+
+<div class = "anc">
+  <div class="inp">
   <!-- Display pie chart -->
   <h2>Test Scores Distribution</h2>
-  <img src="{{ pie_chart }}" alt="Test Scores Pie Chart">
+  <!-- <img src="{{ pie_chart }}" alt="Test Scores Pie Chart"> -->
+
+</div>
+</div>
 {% endblock %}

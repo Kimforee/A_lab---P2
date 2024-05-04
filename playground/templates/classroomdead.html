@@ -1,0 +1,151 @@
+{% load static %}
+{% block content %}
+<link rel="stylesheet" href="{% static '/css/classroom.css' %}">
+<div class="room-container">
+    <div>
+        <hr>
+        <div>
+        <h1>{{classroom.name}}</h1>
+        <h4>by {{classroom.host.username}} </h4>
+        
+        <div class="nest-navbar">
+        <button><a href="">All Requests</a></button>
+        <button><a href="">Members</a></button>
+        <button><a href="{% url 'create-test' classroom.id %}">Create Test</a></button>
+        </div>
+        </div>
+
+        <h5>{{classroom.description}}</h5>
+
+        <div class="comment-wrapper">
+            <h3> Tests </h3>
+            <!-- <hr>
+            {% for message in classroom_messages %}
+            <div>
+                <hr>
+                {% if request.user == message.user or classroom.host.username|striptags == user.username|striptags %}
+                <a href="{% url 'delete-message' message.id %}">Delete</a>
+                {% endif %}
+                    <small>@{{message.user}} {{message.created|timesince}} ago
+                </small>
+                <p>
+                    {{message.body}}
+                </p>
+            </div>
+            {% endfor %} -->
+
+            <div class = "midcontent">
+                <div class="test-navbar head">
+                    <ul>
+                        <li><button class="hbt active" onclick="showContent('test')">Test</button></li>
+                        <li><button class="hbt" onclick="showContent('activity')">Activity</button></li>
+                        <li><button class="hbt" onclick="showContent('quicklinks')">Quick Links</button></li>
+                    </ul>
+                </div>
+                
+                <!-- Loading All the Tests Created  -->
+                <div class="low">
+                    <div id="test" class="content">
+                        {% include 'test_component.html' %}
+                    </div>
+                    <div id="activity" class="content hide">
+                        {% include 'student_report.html' %}
+                    </div>
+                    <div id="quicklinks" class="content hide">
+                        Quick Links Content
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        {% if request.user.is_authenticated %}
+        <div class="comment-form">
+            <form action="" method="post">
+                {% csrf_token %}
+                <input type="text" name="body" placeholder="Write you message here !">
+            </form>
+        </div>
+        {% endif %}
+       
+    </div>
+
+    <div>
+        <select id="viewSelector">
+            <option value="members">Students</option>
+            <option value="activities">User Activities</option>
+            <!-- <option value="tests">Completed Test</option> -->
+        </select>
+    
+    <div id="membersView">
+        <h3>Participants</h3>
+        <hr>
+        {% for user in participants %}
+        <div class="comment-wrapper">
+            {% if classroom.host.username|striptags == user.username|striptags %}
+            <p> Guardian : [♕{{user.username}}♕] </p>
+
+            {% else %}
+
+            <p>@{{user.username}}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="testsView">
+        <h3>All Tests</h3>
+        <hr>
+        {% for user in participants %}
+        <div class="comment-wrapper">
+            
+        </div>
+        {% endfor %}
+    </div>
+
+
+    <div id="activitiesView" style="display: none;">
+       Rampo_san <!-- {% include 'activity_component.html' %} -->
+    </div>
+     
+</div>
+    <script>
+        const viewSelector = document.getElementById('viewSelector');
+        const membersView = document.getElementById('membersView');
+        const activitiesView = document.getElementById('activitiesView');
+        // const testsView = document.getElementById('testsView');
+        viewSelector.addEventListener('change', function() {
+            // if (viewSelector.value === 'tests') {
+            //     membersView.style.display = 'block';
+            //     activitiesView.style.display = 'none';
+            // } 
+            if (viewSelector.value === 'activities') {
+                membersView.style.display = 'none';
+                activitiesView.style.display = 'block';
+            } else if (viewSelector.value === 'members') {
+                membersView.style.display = 'block';
+                activitiesView.style.display = 'none';
+            }
+        });
+        function showContent(contentId) {
+        // Get all content divs
+        const contents = document.querySelectorAll('.content');
+        
+        // Hide all content divs
+        contents.forEach(content => content.classList.add('hide'));
+
+        // Remove 'active' class from all buttons
+        const buttons = document.querySelectorAll('.hbt');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        // Show the target content div
+        const targetContent = document.getElementById(contentId);
+        targetContent.classList.remove('hide');
+
+        // Add 'active' class to the clicked button
+        const button = document.querySelector('button[data-target="' + contentId + '"]');
+        button.classList.add('active');
+    }
+    </script>
+</div>
+{% endblock content %}

@@ -941,6 +941,7 @@ document.addEventListener('keyup', (e) => {
                                 <button class="hbt" onclick="showContent(2)">Class work</button>
                                 <button class="hbt" onclick="showContent(3)">People</button>
                                 <button class="hbt" onclick="showContent(4)">All Test</button>
+                                <button class="hbt" onclick="showContent(5)">Report</button>
 
                             </div>
 
@@ -1030,6 +1031,12 @@ document.addEventListener('keyup', (e) => {
                               
                                 {% include 'test_component.html' %}
                               
+                              </div>
+
+                          </div>
+                          <div id = "content5" class="hidden">
+                            <div class="low1">
+                                {% include 'student_report.html' %}
                               </div>
 
                           </div>

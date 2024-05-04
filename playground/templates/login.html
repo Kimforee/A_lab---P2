@@ -302,7 +302,7 @@
                 <div class="contain">
                     <img class="im" src="{% static '/loginraf.svg' %}" alt="target_img">
                     <div class = "info">
-                        <form method="post" action="">
+                        <form method="post" action="{% url 'login_page' %}">
                             {% csrf_token %}
                             
                         <input class="name" name="username"  type="text" placeholder="Username">

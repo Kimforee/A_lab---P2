@@ -13,6 +13,8 @@ from io import BytesIO
 import base64
 from datetime import datetime
 from time import timezone
+
+
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
@@ -133,8 +135,7 @@ def history_page(request):
 def calander_page(request):
     return render(request,'calander.html')
 
-
-
+ 
 def qresult_page(request):
     return render(request,'result.html')
 
@@ -171,7 +172,7 @@ def generate(request):
 
 
 def get_lama_response(input_text, subject, no_que, que_type, max_token_length=512):
-    llm = CTransformers(model='/Users/mohit/Documents/GitHub/ALAB/playground/model/llama-2-7b-chat.ggmlv3.q8_0.bin',
+    llm = CTransformers(model='./model/llama-2-7b-chat.ggmlv3.q8_0.bin',
                         model_type='llama',
                         config={'max_new_tokens': 256, 'temperature': 0.1})
 
@@ -341,7 +342,8 @@ def take_test(request, pk, test_id, question_index):
     classroom = Classroom.objects.get(id=pk)
     test = Test.objects.get(pk=test_id)
     questions = test.question_set.all().order_by('id')
-
+    print("here inside test")
+    print("here inside test")
     if request.method == 'POST':
         option_selected = request.POST.get('option_selected')
         current_question_index = int(request.POST.get('current_question_index'))
@@ -386,7 +388,7 @@ def take_test(request, pk, test_id, question_index):
                 'question_index': question_index,
             })
 
-    return render(request, 'classroom.html', {'classroom': classroom, 'tests': classroom.test_set.all().order_by('created')})
+    return render(request, 'classroomcopy.html', {'classroom': classroom, 'tests': classroom.test_set.all().order_by('created')})
 
 def calculate_and_redirect_score(request, test, student, classroom):
     try:
