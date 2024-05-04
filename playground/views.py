@@ -13,7 +13,8 @@ from io import BytesIO
 import base64
 from datetime import datetime
 from time import timezone
-
+import pandas as pd
+import numpy as np
 
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -240,28 +241,45 @@ def classroom(request, pk):
         test_attempt__student=request.user
     ).aggregate(average_time=Avg('time_taken'))['average_time'] or 0
 
-    print(average_time_per_question)
+    round(average_time_per_question, 2)
+        
 
     # data visualization
     test_titles = [score.test.title for score in test_scores]
     test_scores_values = [score.score for score in test_scores]
+    for score in test_scores:
+        if pd.isna(score.score):  # Check if the score is NaN
+            test_scores_values.append(0)  # Append 0 if NaN
+        else:
+            test_scores_values.append(score.score)  # Append the actual score
+    test_scores_values = np.nan_to_num(test_scores_values)
+
+    # Filter out zero values
+    non_zero_indices = [i for i, value in enumerate(test_scores_values) if value!= 0]
+    non_zero_test_scores_values = [test_scores_values[i] for i in non_zero_indices]
+    non_zero_test_titles = [test_titles[i] for i in non_zero_indices]
 
     # pie chart
-    # plt.figure(figsize=(8, 3))
-    # # plt.legend(loc="upper center", bbox_to_anchor=(1, 0.5), title="Test Titles")
-    # plt.pie(test_scores_values, labels=test_titles, autopct='%1.1f%%')
-    # plt.title('Test Scores Distribution')
-    # plt.axis('equal')
+    plt.figure(figsize=(8, 3))
+    # plt.legend(loc="upper center", bbox_to_anchor=(1, 0.5), title="Test Titles")
+    if non_zero_test_scores_values:  # Only plot if there are non-zero values
+        plt.pie(non_zero_test_scores_values, explode=None, labels=non_zero_test_titles, autopct='%1.1f%%', shadow=True, startangle=90)
+        plt.title('Test Scores Distribution')
+        plt.axis('equal')
+        plt.show()
+    else:
+        # Display a message or plot a different chart when all values are zero
+        print("No scores to display. Please check your data.")
 
 
-    # # convert plot to bytes and embed in HTML
-    # buffer = BytesIO()
-    # plt.savefig(buffer, format='png')
-    # buffer.seek(0)
-    # image_base64 = base64.b64encode(buffer.getvalue()).decode()
-    # plt.close()
+    # convert plot to bytes and embed in HTML
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.getvalue()).decode()
+    plt.close()
 
-    # pie_chart = f'data:image/png;base64,{image_base64}'
+    pie_chart = f'data:image/png;base64,{image_base64}'
     
     context = {'classroom': classroom, 
                'classroom_messages': classroom_messages,
@@ -271,7 +289,7 @@ def classroom(request, pk):
                'test_scores': test_scores,
                'average_score': average_score,
                'average_time_per_question': average_time_per_question,
-            #    'pie_chart': pie_chart,
+               'pie_chart': pie_chart,
                }
     return render(request,'classroom.html',context)
 
@@ -416,7 +434,7 @@ def calculate_and_redirect_score(request, test, student, classroom):
 @login_required(login_url='login')
 def student_report(request, classroom_id, student_id):
 
-    print("hello1")
+    print("hello")
     student = User.objects.get(id=student_id)
     classroom = Classroom.objects.get(id=classroom_id)
     print("hello")
@@ -425,22 +443,23 @@ def student_report(request, classroom_id, student_id):
     # Extract test names and scores for plotting
     test_names = [score.test.title for score in test_scores]
     scores = [score.score for score in test_scores]
+    scores = [score if not pd.isna(score) else 0 for score in scores]
 
     # Generate pie chart
-    # plt.figure(figsize=(8, 8))
-    # plt.pie(scores, labels=test_names, autopct='%1.1f%%')
-    # plt.title('Test Scores')
-    # plt.savefig('test_scores_pie_chart.png')
+    plt.figure(figsize=(8, 8))
+    plt.pie(scores, labels=test_names, autopct='%1.1f%%')
+    plt.title('Test Scores')
+    plt.savefig('test_scores_pie_chart.png')
 
-    # # Generate bar chart
-    # plt.figure(figsize=(10, 6))
-    # plt.bar(test_names, scores, color='skyblue')
-    # plt.xlabel('Tests')
-    # plt.ylabel('Scores')
-    # plt.title('Test Scores')
-    # plt.xticks(rotation=45)
-    # plt.tight_layout()
-    # plt.savefig('test_scores_bar_chart.png')
+    # Generate bar chart
+    plt.figure(figsize=(10, 6))
+    plt.bar(test_names, scores, color='skyblue')
+    plt.xlabel('Tests')
+    plt.ylabel('Scores')
+    plt.title('Test Scores')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig('test_scores_bar_chart.png')
 
     context = {
         'student': student,
@@ -448,7 +467,6 @@ def student_report(request, classroom_id, student_id):
         'test_scores': test_scores,
     }
     return render(request, 'student_report.html', context)
-
 
 from django.db.models import Prefetch
 from collections import defaultdict
